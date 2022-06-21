@@ -3,6 +3,7 @@ const { MediaService } = require( './../services/MediaService' );
 const { Media } = require( './../models/Media' );
 const autoBind = require( 'auto-bind' );
 const multer = require( 'multer' );
+const sharp = require( 'sharp' );
 const fs = require( 'fs' );
 const utils = require( '../../system/helpers/Utility' ),
     config = require( '../../config/config' ).getConfig(),
@@ -34,6 +35,18 @@ class MediaController extends Controller {
         'storage': this.storage,
         'limits': {
             'fileSize': 1024 * 1024 * 5
+        },
+        'fileFilter': function( req, file, cb ) {
+            // reject a file
+            console.log( req.file );
+            // const stats = fs.statSync( file.originalname );
+            
+            // console.log( stats.size );
+            if ( file.mimetype === 'image/jpeg' || file.mimetype === 'image/png' || file.mimetype === 'image/gif' ) {
+                cb( null, true );
+            } else {
+                cb( null, false );
+            }
         }
     } );
 
@@ -47,9 +60,28 @@ class MediaController extends Controller {
             const uploadPath = config.UPLOAD_PATH;
 
             req.file.path = req.file.path.split( `${uploadPath }/` )[ 1 ];
+            console.log( req.file.destination );
+            console.log( req.file.path );
+            console.log( req.file );
+            if ( req.file.size > 1024 * 50 ) {
+                console.log( req.file.size );
+                console.log( 'resize' );
+
+                await sharp( req.file.path ).resize( 500, 500 ).toFile( `/home/animesh/Work/test/node-mongoose-setup/uploads/${req.file.path}` );
+
+            
+                console.log( 'sharp' );
+                // console.log( req.file );
+                // const response = await this.service.insert( req.file );
+
+                // return res.status( response.statusCode ).json( response );
+            }
             const response = await this.service.insert( req.file );
+            
+            console.log( req.file.size );
 
             return res.status( response.statusCode ).json( response );
+            
         } catch ( e ) {
             next( e );
         }
