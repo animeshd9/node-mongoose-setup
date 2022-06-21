@@ -3,7 +3,8 @@ const { MediaService } = require( './../services/MediaService' );
 const { Media } = require( './../models/Media' );
 const autoBind = require( 'auto-bind' );
 const multer = require( 'multer' );
-const sharp = require( 'sharp' );
+// const sharp = require( 'sharp' );
+const resizeImage = require( 'resize-img' );
 const fs = require( 'fs' );
 const utils = require( '../../system/helpers/Utility' ),
     config = require( '../../config/config' ).getConfig(),
@@ -63,22 +64,36 @@ class MediaController extends Controller {
             console.log( req.file.destination );
             console.log( req.file.path );
             console.log( req.file );
+            const fileName = req.file.path;
+
+            console.log( fileName );
             if ( req.file.size > 1024 * 50 ) {
                 console.log( req.file.size );
                 console.log( 'resize' );
+                
 
-                await sharp( req.file.path ).resize( 500, 500 ).toFile( `/home/animesh/Work/test/node-mongoose-setup/uploads/${req.file.path}` );
+                // await sharp( fileName ).resize( 500, 500 ).toFile( `/home/animesh/Work/test/node-mongoose-setup/uploads/${fileName}` );
+                const image = await resizeImage( fs.readFileSync( `/home/animesh/Work/test/node-mongoose-setup/uploads/${fileName}` ), {
+                    // eslint-disable-next-line quote-props
+                    width: 800,
+                    // eslint-disable-next-line quote-props
+                    height: 800
+                } );
+
+                fs.writeFileSync( `/home/animesh/Work/test/node-mongoose-setup/uploads/${fileName}`, image );
 
             
-                console.log( 'sharp' );
+                console.log( image );
+                console.log( req.file.size );
                 // console.log( req.file );
                 // const response = await this.service.insert( req.file );
 
                 // return res.status( response.statusCode ).json( response );
             }
+            
             const response = await this.service.insert( req.file );
             
-            console.log( req.file.size );
+            // console.log( req.file.size );
 
             return res.status( response.statusCode ).json( response );
             
@@ -118,7 +133,16 @@ class MediaController extends Controller {
             next( e );
         }
     }
-
+    async get( req, res, next) {
+        const { id } = req.params;
+        
+        try {
+            const response = await this.service.get( id );
+        } catch ( e ) {
+            
+        }
+    }
+ 
 }
 
 module.exports = new MediaController( mediaService );
